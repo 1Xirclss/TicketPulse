@@ -281,7 +281,7 @@ export default function AuthPage({ mode }) {
               <span /> TU EQUIPO, EN UN SOLO LUGAR <span />
             </div>
             <p className="switch-form">
-              {register ? '¿Ya tienes una cuenta?' : '¿Primera vez en NexoAdmin?'}{' '}
+              {register ? '¿Ya tienes una cuenta?' : '¿Primera vez en TicketPulse?'}{' '}
               <Link to={register ? '/login' : '/registro'}>
                 {register ? 'Inicia sesión' : 'Crear una cuenta'} <ArrowUp />
               </Link>

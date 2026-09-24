@@ -9,5 +9,5 @@ export async function sendRecoveryMail(correo, otp) {
     requireTLS: config.NODE_ENV === 'production', connectionTimeout: 10000, socketTimeout: 15000,
     ...(config.SMTP_USER ? { auth: { user: config.SMTP_USER, pass: config.SMTP_PASS } } : {})
   });
-  await transport.sendMail({ from: config.SMTP_FROM, to: correo, subject: 'NexoAdmin · Recupera tu acceso', text: `Tu código de recuperación es ${otp}. Vence en 10 minutos. Si no lo solicitaste, ignora este correo.` });
+  await transport.sendMail({ from: config.SMTP_FROM, to: correo, subject: 'TicketPulse · Recupera tu acceso', text: `Tu código de recuperación es ${otp}. Vence en 10 minutos. Si no lo solicitaste, ignora este correo.` });
 }

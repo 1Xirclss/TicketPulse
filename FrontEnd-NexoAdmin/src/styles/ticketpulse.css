@@ -1,0 +1,18 @@
+.ticketpulse-brand{gap:10px!important;max-width:100%;color:#00213f!important}
+.ticketpulse-brand>svg{width:49px;height:40px;flex-shrink:0;transform:rotate(-12deg)}
+.ticketpulse-brand>span:last-child{font-family:'Outfit',sans-serif!important;font-size:26px!important;font-weight:800!important;letter-spacing:-1px!important;white-space:nowrap}
+.ticketpulse-brand .brand-light{color:#009cef!important;font-weight:800}
+.ticketpulse-brand small{font-size:6px!important;letter-spacing:1.6px!important;color:#426584!important}
+.ticketpulse-scene{isolation:isolate;inset:0!important;min-height:210px}
+.mascot-fallback{position:absolute;inset:15% 12%;display:grid;place-items:center;transform:rotate(-9deg)}
+.mascot-fallback svg{width:100%;max-height:100%}
+.ticketpulse-scene:has(canvas) .mascot-fallback{visibility:hidden}
+.mascot-greet{position:absolute;z-index:3;bottom:0;left:50%;transform:translateX(-50%);border:1px solid #009cef40;border-radius:24px;padding:9px 16px;background:#ffffffed;color:#00305a;font-size:11px;white-space:nowrap;box-shadow:0 5px 20px #005cbb12}
+.mascot-greet:hover{background:#e4f9ff}
+.mascot-greet:focus-visible{outline:3px solid #008cff;outline-offset:3px}
+.visual .visual-label{display:none}
+.banner-visual{z-index:1!important;pointer-events:auto}
+.banner-visual .mascot-greet{bottom:32px;font-size:9px;padding:6px 10px}
+.mobile-mascot{display:none;width:100%}
+@media(max-width:760px){.mobile-mascot{display:block;height:180px;position:relative;margin:18px auto 0;max-width:300px}.mobile-mascot .ticketpulse-scene{min-height:180px}.mobile-mascot .mascot-greet{font-size:10px;padding:6px 12px}.mobile-mascot+.form-content{padding-top:24px}.banner-visual{display:none!important}.ticketpulse-brand>span:last-child{font-size:23px!important}.ticketpulse-brand>svg{width:43px}}
+@media(prefers-reduced-motion:reduce){.ticketpulse-brand>svg{transform:none}}

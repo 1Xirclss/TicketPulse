@@ -8,7 +8,7 @@ export default function Modal({ title, onClose, busy = false, children, classNam
     return () => { node.close(); document.body.style.overflow = previous; };
   }, []);
   return <dialog ref={dialog} aria-labelledby={titleId} className={'sales-dialog ' + className} onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}>
-    <header className="dialog-header"><div><span className="page-eyebrow">NEXO / EVENT OPERATIONS</span><h2 id={titleId}>{title}</h2></div><button type="button" className="icon-button" onClick={onClose} disabled={busy} aria-label="Cerrar ventana"><X size={19}/></button></header>
+    <header className="dialog-header"><div><span className="page-eyebrow">TICKETPULSE / EVENT OPERATIONS</span><h2 id={titleId}>{title}</h2></div><button type="button" className="icon-button" onClick={onClose} disabled={busy} aria-label="Cerrar ventana"><X size={19}/></button></header>
     {children}
   </dialog>;
 }

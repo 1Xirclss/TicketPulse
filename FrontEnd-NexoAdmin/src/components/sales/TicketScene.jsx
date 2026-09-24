@@ -19,7 +19,7 @@ function Card({ data, qr }) {
     gradient.addColorStop(0,'#445A71'); gradient.addColorStop(0.48,'#1E3040'); gradient.addColorStop(1,'#1A191E');
     ctx.fillStyle = gradient; ctx.fillRect(0,0,1000,1500);
     ctx.strokeStyle = '#9CABBB66'; ctx.lineWidth = 2; ctx.strokeRect(32,32,936,1436);
-    ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('NEXOADMIN',70,120);
+    ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('TICKETPULSE',70,120);
     ctx.fillStyle = '#b4c9dc'; ctx.font = '20px monospace'; ctx.fillText('EVENT PASS / ' + data.venta.categoria.toUpperCase(),70,167);
     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px sans-serif'; drawLines(ctx,data.evento.nombre,70,270,850,65);
     ctx.fillStyle = '#c4d4e0'; ctx.font = '24px sans-serif'; ctx.fillText(dateLabel(data.evento.fecha) + ' · ' + data.evento.horario,70,440);

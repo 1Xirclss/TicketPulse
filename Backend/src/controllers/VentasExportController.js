@@ -33,7 +33,7 @@ export async function exportCsv(req, res) {
 }
 export async function exportPdf(req, res) {
   const { evento, data, cursor } = await exportSource(req);
-  const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: 'Ventas - ' + evento.nombre, Author: 'NexoAdmin' } });
+  const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: 'Ventas - ' + evento.nombre, Author: 'TicketPulse' } });
   res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="ventas-' + evento._id + '.pdf"' });
   doc.pipe(res);
   let page = 0, y, count = 0, total = 0;
@@ -43,11 +43,11 @@ export async function exportPdf(req, res) {
   const cols = widths.map(width => width * scale);
   const clean = value => String(value ?? '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 500);
   function footer() {
-    doc.font('Helvetica').fontSize(8).fillColor('#445A71').text('NexoAdmin | Reporte de ventas | Página ' + page, 40, doc.page.height - 32, { lineBreak: false });
+    doc.font('Helvetica').fontSize(8).fillColor('#445A71').text('TicketPulse | Reporte de ventas | Página ' + page, 40, doc.page.height - 32, { lineBreak: false });
   }
   function startPage() {
     page++;
-    doc.fillColor('#1A191E').font('Helvetica-Bold').fontSize(20).text('NEXOADMIN / VENTAS', 40, 35);
+    doc.fillColor('#1A191E').font('Helvetica-Bold').fontSize(20).text('TICKETPULSE / VENTAS', 40, 35);
     doc.fontSize(11).text(clean(evento.nombre), 40, 66, { width: doc.page.width - 80 });
     const filters = Object.entries(data).filter(([key,value]) => !['evento','page','limit'].includes(key) && value).map(([key,value]) => key + ': ' + value).join(' | ') || 'Todas las ventas vigentes';
     doc.font('Helvetica').fontSize(8).fillColor('#445A71').text('Emitido: ' + new Date().toISOString() + ' | ' + clean(filters), 40, 94, { width: doc.page.width - 80, height: 28, ellipsis: true });

@@ -8,3 +8,4 @@ createRoot(document.getElementById('root')).render(<React.StrictMode><App/></Rea
 
 import './styles/sales.css';
 import './styles/steel-theme.css';
+import './styles/ticketpulse.css';
