@@ -2,8 +2,21 @@ import { API_URL } from '../config';
 
 export async function api(path, { method = 'GET', body, signal, headers = {} } = {}) {
   let response;
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('nexo_token') : null;
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
   try {
-    response = await fetch(`${API_URL}${path}`, { method, credentials: 'include', signal, headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });
+    response = await fetch(`${API_URL}${path}`, {
+      method,
+      credentials: 'include',
+      signal,
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...authHeaders,
+        ...headers
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     throw new Error('No pudimos conectar con el servidor. Comprueba tu conexión.');

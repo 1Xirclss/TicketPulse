@@ -23,6 +23,7 @@ function isAllowed(origin) {
   if (clean === allowedOrigin) return true;
   if (clean.endsWith('.vercel.app')) return true;
   if (clean.includes('localhost') || clean.includes('127.0.0.1')) return true;
+  if (/^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(clean)) return true;
   return false;
 }
 app.use(cors({ 
@@ -30,7 +31,8 @@ app.use(cors({
     if (isAllowed(origin)) return callback(null, true);
     callback(null, false);
   }, 
-  credentials: true 
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
 }));
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');

@@ -11,14 +11,15 @@ const cookieOptions = {
   httpOnly: true, 
   secure: config.NODE_ENV === 'production', 
   sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax', 
-  path: '/api' 
+  path: '/' 
 };
 const dummyHash = await bcrypt.hash('constant-time-login-placeholder', 12);
 
 function establishSession(res, user, recordar) {
   const seconds = recordar ? 60 * 60 * 24 * 30 : 60 * 60 * 8;
   const token = jwt.sign({ version: user.sessionVersion }, config.JWT_SECRET, { subject: user.id, expiresIn: seconds, issuer: 'nexoadmin', audience: 'nexoadmin-web' });
-  res.cookie('nexo_session', token, { ...cookieOptions, path: '/api', ...(recordar ? { maxAge: seconds * 1000 } : {}) });
+  res.cookie('nexo_session', token, { ...cookieOptions, path: '/', ...(recordar ? { maxAge: seconds * 1000 } : {}) });
+  return token;
 }
 
 function checkOrgKey(rol, inputKey) {
@@ -96,8 +97,8 @@ export async function verifyRegistration(req, res) {
     throw httpError(400, 'Código de verificación inválido o vencido.');
   }
 
-  establishSession(res, user, false);
-  res.status(201).json({ user: publicUser(user), message: 'Cuenta activada exitosamente.' });
+  const token = establishSession(res, user, false);
+  res.status(201).json({ user: publicUser(user), token, message: 'Cuenta activada exitosamente.' });
 }
 
 // Registro directo (compatibilidad con scripts y suites de pruebas)
@@ -105,20 +106,20 @@ export async function register(req, res) {
   const data = req.input;
   if (!checkOrgKey(data.rol, data.claveOrganizacion)) throw httpError(403, 'La clave de organización no es válida.');
   const user = await Usuarios.create({ nombre: data.nombre, correo: data.correo, passwordHash: await bcrypt.hash(data.password, 12), rol: data.rol });
-  establishSession(res, user, false);
-  res.status(201).json({ user: publicUser(user) });
+  const token = establishSession(res, user, false);
+  res.status(201).json({ user: publicUser(user), token });
 }
 export async function login(req, res) {
   const { correo, password, recordar } = req.input;
   const user = await Usuarios.findOne({ correo }).select('+passwordHash +sessionVersion');
   const valid = await bcrypt.compare(password, user?.passwordHash || dummyHash);
   if (!user?.activo || !valid) throw httpError(401, 'Correo o contraseña incorrectos.');
-  establishSession(res, user, recordar);
-  res.json({ user: publicUser(user) });
+  const token = establishSession(res, user, recordar);
+  res.json({ user: publicUser(user), token });
 }
 export async function logout(req, res) {
   await Usuarios.updateOne({ _id: req.user._id }, { $inc: { sessionVersion: 1 } });
-  res.clearCookie('nexo_session', { ...cookieOptions, path: '/api' });
+  res.clearCookie('nexo_session', { ...cookieOptions, path: '/' });
   res.status(204).end();
 }
 export async function forgot(req, res) {
