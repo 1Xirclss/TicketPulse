@@ -20,6 +20,6 @@ try {
     setTimeout(() => process.exit(1), 10_000).unref();
   });
 } catch (error) {
-  console.error('No se pudo iniciar la API:', error.name);
+  console.error('No se pudo iniciar la API:', error.name, error.message);
   process.exit(1);
 }
