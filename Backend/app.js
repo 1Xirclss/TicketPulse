@@ -32,7 +32,7 @@ app.use(cors({
     callback(null, false);
   }, 
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'Origin', 'Accept']
 }));
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');

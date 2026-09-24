@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Ban, ChevronLeft, ChevronRight, Download, Edit3, FileDown, Plus, RefreshCw, Search, SlidersHorizontal, Ticket, Users } from 'lucide-react';
+import { Ban, ChevronLeft, ChevronRight, Edit3, FileDown, Plus, RefreshCw, Search, SlidersHorizontal, Sparkles, Ticket, Users } from 'lucide-react';
 import { useEvent } from '../context/EventContext';
 import { useAuth } from '../hooks/useAuth';
 import useSales from '../hooks/useSales';
@@ -8,6 +8,7 @@ import { downloadReport } from '../utils/download';
 import { money, number } from '../utils/format';
 import SaleForm from '../components/sales/SaleForm';
 import CancelSale from '../components/sales/CancelSale';
+import SalesAssistant from '../components/sales/SalesAssistant';
 const TicketModal = lazy(() => import('../components/sales/TicketModal'));
 export default function Sales() {
   const { user } = useAuth(); const { selectedId, evento } = useEvent();
@@ -44,7 +45,7 @@ function SalesWorkspace({ evento, user }) {
     <div className="page-heading"><div><div className="page-eyebrow">WORKSPACE <span>/</span> VENTAS & ASISTENTES</div><h1>Cada entrada cuenta<span>.</span></h1><p>Emite, consulta y administra las ventas de {evento.nombre}.</p></div><div className="sales-heading-icon"><Ticket size={26}/></div></div>
     {notice && <div className="alert success" role="status">{notice}</div>}
     {(error || setupError) && <div className="alert error" role="alert">{error || setupError}{setupError && <button className="text-button" onClick={() => loadOptions()}>Reintentar</button>}</div>}
-    <section className="sales-toolbar"><div className="sales-search"><Search size={18}/><label className="sr-only" htmlFor="sales-search">Buscar ventas</label><input id="sales-search" placeholder="Nombre, colegio, teléfono o ticket…" value={search} onChange={event => setSearch(event.target.value)}/><span>⌕</span></div><div className="sales-toolbar-actions"><button className="secondary-button" onClick={() => report('csv')} disabled={!!exporting} title="Descargar CSV filtrado"><Download size={16}/><span>CSV</span></button><button className="secondary-button" onClick={() => report('pdf')} disabled={!!exporting}><FileDown size={16}/>{exporting === 'pdf' ? 'Generando…' : 'Exportar PDF'}</button><button className="primary-button compact" disabled={!canCreate} onClick={() => {setNotice('');setModal({ type:'create' });}}><Plus size={17}/> Registrar Venta</button></div></section>
+    <section className="sales-toolbar"><div className="sales-search"><Search size={18}/><label className="sr-only" htmlFor="sales-search">Buscar ventas</label><input id="sales-search" placeholder="Nombre, colegio, teléfono o ticket…" value={search} onChange={event => setSearch(event.target.value)}/><span>⌕</span></div><div className="sales-toolbar-actions"><button className="secondary-button" onClick={() => {setNotice('');setModal({ type:'assistant' });}} disabled={!canCreate} title="Registrar ventas desde una lista"><Sparkles size={16}/><span>Asistente de ventas</span></button><button className="secondary-button" onClick={() => report('pdf')} disabled={!!exporting}><FileDown size={16}/>{exporting === 'pdf' ? 'Generando…' : 'Exportar PDF'}</button><button className="primary-button compact" disabled={!canCreate} onClick={() => {setNotice('');setModal({ type:'create' });}}><Plus size={17}/> Registrar Venta</button></div></section>
     {!evento.activo && <p className="sales-context-note">El evento está inactivo. Puedes consultar sus ventas, pero no emitir entradas nuevas.</p>}
     {evento.activo && options && !tarifas.length && <p className="sales-context-note">No hay tarifas activas para emitir entradas. Los precios se administran externamente.</p>}
     {options && <section className="sales-filters" aria-label="Filtros de ventas"><div className="filters-caption"><SlidersHorizontal size={15}/><span>FILTRAR VENTAS</span><button onClick={() => {setFilters({ estado:'',metodo:'',categoria:'',puerta:'' });setSearch('');setPage(1);}}>Limpiar filtros</button></div><FilterChips label="Categoría" values={options.categorias.map(value => ({value,label:value}))} selected={filters.categoria} onChange={value => choose('categoria',value)}/><FilterChips label="Estado" values={options.estadosFiltro} selected={filters.estado} onChange={value => choose('estado',value)}/><FilterChips label="Método" values={options.metodos.map(value => ({value,label:value}))} selected={filters.metodo} onChange={value => choose('metodo',value)}/><FilterChips label="Puerta" values={options.puerta.map(value => ({value,label:value === 'Ingresado' ? 'Ingresados' : 'Pendientes de ingreso'}))} selected={filters.puerta} onChange={value => choose('puerta',value)}/></section>}
@@ -53,6 +54,7 @@ function SalesWorkspace({ evento, user }) {
       <footer className="sales-pagination"><span>{data ? number(data.total) : '—'} resultados · 20 por página</span><div><button className="icon-button" disabled={loading || page === 1} onClick={() => setPage(page-1)} aria-label="Página anterior"><ChevronLeft size={17}/></button><span>Página {page} de {Math.max(1,data?.pages || 0)}</span><button className="icon-button" disabled={loading || !data || page >= data.pages} onClick={() => setPage(page+1)} aria-label="Página siguiente"><ChevronRight size={17}/></button></div></footer>
     </section>
     {(modal?.type === 'create' || modal?.type === 'edit') && <SaleForm evento={evento} tarifas={tarifas} options={options} venta={modal.venta} onClose={() => setModal(null)} onSaved={saved}/>}
+    {modal?.type === 'assistant' && <SalesAssistant evento={evento} tarifas={tarifas} onClose={() => setModal(null)} onSaved={count => {setNotice(`${count} venta(s) registradas con la asistente.`);setPage(1);refresh();}}/>}
     {modal?.type === 'cancel' && <CancelSale venta={modal.venta} onClose={() => setModal(null)} onSaved={saved}/>}
     {modal?.type === 'ticket' && <Suspense fallback={<div className="ticket-preparing" role="status">Preparando boleto…</div>}><TicketModal saleId={modal.venta.id} onClose={() => setModal(null)}/></Suspense>}
   </div>;
