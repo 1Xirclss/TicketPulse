@@ -17,9 +17,17 @@ app.disable('x-powered-by');
 if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.use(helmet());
 const allowedOrigin = config.FRONTEND_URL.replace(/\/$/, '');
+function isAllowed(origin) {
+  if (!origin) return true;
+  const clean = origin.replace(/\/$/, '');
+  if (clean === allowedOrigin) return true;
+  if (clean.endsWith('.vercel.app')) return true;
+  if (clean.includes('localhost') || clean.includes('127.0.0.1')) return true;
+  return false;
+}
 app.use(cors({ 
   origin: (origin, callback) => {
-    if (!origin || origin.replace(/\/$/, '') === allowedOrigin) return callback(null, true);
+    if (isAllowed(origin)) return callback(null, true);
     callback(null, false);
   }, 
   credentials: true 
@@ -27,7 +35,7 @@ app.use(cors({
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   const origin = req.get('origin');
-  if (origin && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin.replace(/\/$/, '') !== allowedOrigin) {
+  if (origin && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !isAllowed(origin)) {
     return res.status(403).json({ message: 'Origen de solicitud no permitido.' });
   }
   next();
