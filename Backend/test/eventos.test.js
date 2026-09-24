@@ -68,12 +68,27 @@ test('tarifas: consulta activas y gestión autorizada solo para admin', async ()
   assert.equal(resCrear.status, 201);
   assert.equal(resCrear.body.tarifa.categoria, 'VIP');
 
+  // Guardar a la vez Preventa y Puerta para una categoría
+  const resCatPrecios = await write('put', '/api/tarifas/categorias/precios', {
+    eventoId: eventId,
+    categoria: 'VIP',
+    precioPreventaCentavos: 3500,
+    precioPuertaCentavos: 4500,
+    activaPreventa: true,
+    activaPuerta: true
+  }, admin);
+  assert.equal(resCatPrecios.status, 200);
+  assert.equal(resCatPrecios.body.preventa.precioCentavos, 3500);
+  assert.equal(resCatPrecios.body.puerta.precioCentavos, 4500);
+
   const resRenombrar = await write('put', '/api/tarifas/categorias/renombrar', { eventoId: eventId, categoriaAnterior: 'VIP', categoriaNueva: 'Platino' }, admin);
   assert.equal(resRenombrar.status, 200);
   assert.equal(resRenombrar.body.categoria, 'Platino');
 
-  // Limpiar la tarifa creada para no afectar el conteo de pruebas posteriores
+  // Limpiar las tarifas creadas para no afectar el conteo de pruebas posteriores
   await Tarifa.deleteOne({ _id: resCrear.body.tarifa._id });
+  await Tarifa.deleteOne({ _id: resCatPrecios.body.preventa._id });
+  await Tarifa.deleteOne({ _id: resCatPrecios.body.puerta._id });
 });
 test('agregaciones separan pagados, pendientes y anulados y aíslan cada evento', async () => {
   const sale = { evento: eventId, tarifa: tarifaId, registradoPor: adminId, nombre: 'Asistente de prueba', categoria: 'General', cantidad: 2, precioUnitarioCentavos: 1500, totalCentavos: 3000, metodo: 'Efectivo', estadoPago: 'CANCELADO', ingresos: [{ fecha: new Date(), portero: adminId }] };

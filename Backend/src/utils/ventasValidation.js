@@ -47,3 +47,12 @@ export const renameCategorySchema = z.object({
   categoriaNueva: z.string().trim().min(1).max(50)
 }).strict();
 
+export const saveCategoryPricesSchema = z.object({
+  eventoId: objectId,
+  categoria: z.string().trim().min(1, 'La categoría es obligatoria.').max(50),
+  precioPreventaCentavos: z.number().int().min(0, 'El precio de Preventa no puede ser negativo.'),
+  precioPuertaCentavos: z.number().int().min(0, 'El precio de Puerta no puede ser negativo.'),
+  activaPreventa: z.boolean().default(true),
+  activaPuerta: z.boolean().default(true)
+}).strict();
+

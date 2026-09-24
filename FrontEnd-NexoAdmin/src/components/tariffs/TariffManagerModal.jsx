@@ -23,8 +23,13 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
 
   // Gestión de Categorías
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryPreventa, setNewCategoryPreventa] = useState('15.00');
+  const [newCategoryPuerta, setNewCategoryPuerta] = useState('20.00');
   const [editingCategory, setEditingCategory] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+
+  // Precios agrupados por categoría (Preventa y Puerta simultáneos)
+  const [categoryPrices, setCategoryPrices] = useState({});
 
   // Cargar todas las tarifas (incluyendo inactivas para administradores)
   async function loadTarifas() {
@@ -49,6 +54,24 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
   const existingCategories = Array.from(
     new Set(['General', 'Promo', ...tarifas.map(t => t.categoria)])
   ).filter(Boolean);
+
+  // Sincronizar mapa de precios por categoría al cargar o actualizar tarifas
+  useEffect(() => {
+    const map = {};
+    existingCategories.forEach(cat => {
+      const prev = tarifas.find(t => t.categoria === cat && t.etapa === 'Preventa');
+      const puer = tarifas.find(t => t.categoria === cat && t.etapa === 'Puerta');
+      map[cat] = {
+        preventaPrice: prev ? (prev.precioCentavos / 100).toFixed(2) : '15.00',
+        preventaActiva: prev ? prev.activa : true,
+        puertaPrice: puer ? (puer.precioCentavos / 100).toFixed(2) : '20.00',
+        puertaActiva: puer ? puer.activa : true,
+        hasPreventa: !!prev,
+        hasPuerta: !!puer
+      };
+    });
+    setCategoryPrices(map);
+  }, [tarifas]);
 
   // Iniciar edición de una tarifa existente
   function startEditTariff(tarifa) {
@@ -160,7 +183,45 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
     }
   }
 
-  // Crear categoría nueva desde la pestaña de categorías
+  // Guardar a la vez precios de Preventa y Puerta para una categoría
+  async function handleSaveCategoryPrices(cat) {
+    const data = categoryPrices[cat];
+    if (!data) return;
+
+    const prevNum = parseFloat(data.preventaPrice);
+    const puerNum = parseFloat(data.puertaPrice);
+
+    if (isNaN(prevNum) || prevNum < 0 || isNaN(puerNum) || puerNum < 0) {
+      setError('Ingresa precios válidos para Preventa y Puerta (0 o mayores).');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await api('/tarifas/categorias/precios', {
+        method: 'PUT',
+        body: {
+          eventoId: evento._id,
+          categoria: cat,
+          precioPreventaCentavos: Math.round(prevNum * 100),
+          precioPuertaCentavos: Math.round(puerNum * 100),
+          activaPreventa: data.preventaActiva !== false,
+          activaPuerta: data.puertaActiva !== false
+        }
+      });
+      setNotice(`Tarifas de Preventa ($${prevNum.toFixed(2)}) y Puerta ($${puerNum.toFixed(2)}) guardadas correctamente para "${cat}".`);
+      await loadTarifas();
+      if (onSaved) onSaved();
+    } catch (err) {
+      setError(err.message || 'Error al guardar tarifas por categoría');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Crear categoría nueva desde la pestaña de categorías (con Preventa y Puerta)
   async function handleAddCategory(e) {
     e.preventDefault();
     const cat = newCategoryName.trim();
@@ -170,22 +231,26 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
       return;
     }
 
-    // Creamos automáticamente una tarifa representativa con esa categoría
+    const prevNum = parseFloat(newCategoryPreventa) || 15;
+    const puerNum = parseFloat(newCategoryPuerta) || 20;
+
     setBusy(true);
     setError('');
     try {
-      await api('/tarifas', {
-        method: 'POST',
+      await api('/tarifas/categorias/precios', {
+        method: 'PUT',
         body: {
           eventoId: evento._id,
-          nombre: `Entrada ${cat}`,
           categoria: cat,
-          etapa: 'Preventa',
-          precioCentavos: 1000,
-          activa: true
+          precioPreventaCentavos: Math.round(prevNum * 100),
+          precioPuertaCentavos: Math.round(puerNum * 100),
+          activaPreventa: true,
+          activaPuerta: true
         }
       });
       setNewCategoryName('');
+      setNewCategoryPreventa('15.00');
+      setNewCategoryPuerta('20.00');
       setNotice(`Categoría "${cat}" creada con su tarifa correspondiente.`);
       await loadTarifas();
       if (onSaved) onSaved();
@@ -271,6 +336,131 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
         {/* Pestaña 1: Tarifas */}
         {activeTab === 'tarifas' && (
           <div className="tariff-tab-content">
+            {/* Sección de Tarificación por Categoría (Preventa y Puerta a la vez) */}
+            <section className="category-pricing-section">
+              <div className="section-title-wrap">
+                <h3>Tarifas Oficiales por Categoría</h3>
+                <p className="section-note">
+                  Configura y guarda el precio de <strong>Preventa</strong> y <strong>Puerta</strong> para cada categoría al mismo tiempo.
+                </p>
+              </div>
+
+              <div className="category-pricing-cards">
+                {existingCategories.map(cat => {
+                  const p = categoryPrices[cat] || {
+                    preventaPrice: '15.00',
+                    puertaPrice: '20.00',
+                    preventaActiva: true,
+                    puertaActiva: true
+                  };
+                  return (
+                    <div key={cat} className="category-pricing-card">
+                      <div className="cat-card-header">
+                        <span className="category-badge">{cat}</span>
+                        <span className="cat-hint">2 etapas de venta</span>
+                      </div>
+
+                      <div className="cat-stages-grid">
+                        {/* Columna Preventa */}
+                        <div className={`stage-pricing-box ${!p.preventaActiva ? 'is-inactive' : ''}`}>
+                          <div className="stage-pricing-label">
+                            <Ticket size={15} />
+                            <strong>Preventa</strong>
+                          </div>
+                          <div className="price-input-wrap">
+                            <span className="currency-prefix">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              aria-label={`Precio Preventa ${cat}`}
+                              value={p.preventaPrice}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setCategoryPrices(prev => ({
+                                  ...prev,
+                                  [cat]: { ...prev[cat], preventaPrice: val }
+                                }));
+                              }}
+                              disabled={busy}
+                            />
+                          </div>
+                          <label className="stage-active-toggle">
+                            <input
+                              type="checkbox"
+                              checked={p.preventaActiva}
+                              onChange={e => {
+                                const checked = e.target.checked;
+                                setCategoryPrices(prev => ({
+                                  ...prev,
+                                  [cat]: { ...prev[cat], preventaActiva: checked }
+                                }));
+                              }}
+                              disabled={busy}
+                            />
+                            <span>{p.preventaActiva ? 'Activa' : 'Inactiva'}</span>
+                          </label>
+                        </div>
+
+                        {/* Columna Puerta */}
+                        <div className={`stage-pricing-box ${!p.puertaActiva ? 'is-inactive' : ''}`}>
+                          <div className="stage-pricing-label">
+                            <Tag size={15} />
+                            <strong>Puerta</strong>
+                          </div>
+                          <div className="price-input-wrap">
+                            <span className="currency-prefix">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              aria-label={`Precio Puerta ${cat}`}
+                              value={p.puertaPrice}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setCategoryPrices(prev => ({
+                                  ...prev,
+                                  [cat]: { ...prev[cat], puertaPrice: val }
+                                }));
+                              }}
+                              disabled={busy}
+                            />
+                          </div>
+                          <label className="stage-active-toggle">
+                            <input
+                              type="checkbox"
+                              checked={p.puertaActiva}
+                              onChange={e => {
+                                const checked = e.target.checked;
+                                setCategoryPrices(prev => ({
+                                  ...prev,
+                                  [cat]: { ...prev[cat], puertaActiva: checked }
+                                }));
+                              }}
+                              disabled={busy}
+                            />
+                            <span>{p.puertaActiva ? 'Activa' : 'Inactiva'}</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="cat-card-actions">
+                        <button
+                          type="button"
+                          className="primary-button compact full-width"
+                          onClick={() => handleSaveCategoryPrices(cat)}
+                          disabled={busy}
+                        >
+                          <Check size={14} /> Guardar Precios de {cat}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
             {/* Formulario de Crear / Editar Tarifa */}
             <form ref={formCardRef} className="tariff-form-card" onSubmit={handleSubmitTariff}>
               <div className="form-card-header">
@@ -447,10 +637,13 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
         {/* Pestaña 2: Categorías */}
         {activeTab === 'categorias' && (
           <div className="tariff-tab-content">
-            {/* Formulario rápida de nueva categoría */}
+            {/* Formulario rápida de nueva categoría con Preventa y Puerta */}
             <form className="category-form-card" onSubmit={handleAddCategory}>
-              <h3>Agregar Nueva Categoría</h3>
-              <div className="category-add-row">
+              <h3>Agregar Nueva Categoría (Preventa y Puerta simultáneas)</h3>
+              <p className="section-note">
+                Crea la categoría con sus tarifas oficiales de Preventa y Puerta listas para vender.
+              </p>
+              <div className="category-add-row" style={{ marginTop: '12px' }}>
                 <input
                   type="text"
                   placeholder="Ej: VIP, Platinum, Cortesía, Estudiante…"
@@ -461,6 +654,40 @@ export default function TariffManagerModal({ evento, onClose, onSaved }) {
                 <button type="submit" className="primary-button compact" disabled={busy || !newCategoryName.trim()}>
                   <Plus size={16} /> Crear Categoría
                 </button>
+              </div>
+              <div className="tariff-form-grid" style={{ marginTop: '12px' }}>
+                <div className="field-group">
+                  <label htmlFor="cat-new-preventa">Precio Preventa en USD ($)</label>
+                  <div className="price-input-wrap">
+                    <span className="currency-prefix">$</span>
+                    <input
+                      id="cat-new-preventa"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="15.00"
+                      value={newCategoryPreventa}
+                      onChange={e => setNewCategoryPreventa(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="field-group">
+                  <label htmlFor="cat-new-puerta">Precio Puerta en USD ($)</label>
+                  <div className="price-input-wrap">
+                    <span className="currency-prefix">$</span>
+                    <input
+                      id="cat-new-puerta"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="20.00"
+                      value={newCategoryPuerta}
+                      onChange={e => setNewCategoryPuerta(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
             </form>
 
