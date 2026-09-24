@@ -899,7 +899,7 @@ h1, h2, h3, h4, .brand > span:last-child, .dialog-header h2, .form-content h2, .
   color: #0B0F19 !important;
   margin-bottom: 8px;
 }
-.settings-field input, .settings-field select, .settings-field textarea, .input-wrap input, .field select {
+.settings-field input, .settings-field select, .settings-field textarea, .field select {
   font-size: 15px !important;
   background: #FFFFFF !important;
   border: 1px solid #CCDBFD !important;
@@ -909,9 +909,85 @@ h1, h2, h3, h4, .brand > span:last-child, .dialog-header h2, .form-content h2, .
   height: 48px;
   padding: 0 14px;
 }
+.input-wrap {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+.input-wrap > svg {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #475569 !important;
+  pointer-events: none !important;
+  z-index: 5 !important;
+}
+.input-wrap input {
+  font-size: 15px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CCDBFD !important;
+  border-radius: 8px !important;
+  color: #000000 !important;
+  font-weight: 500 !important;
+  height: 48px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 44px !important;
+}
+.input-wrap input::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+.input-wrap .reveal {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  padding: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 5 !important;
+}
 .settings-field input:focus, .settings-field select:focus, .input-wrap input:focus, .field select:focus {
   border-color: #82A6FF !important;
   box-shadow: 0 0 0 3px rgba(171, 196, 255, 0.4) !important;
+}
+.divider {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 9px !important;
+  letter-spacing: 1.5px !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  margin: 28px 0 20px !important;
+  white-space: nowrap !important;
+}
+.divider span {
+  height: 1px !important;
+  flex: 1 !important;
+  background: #CCDBFD !important;
+}
+.visual-label {
+  background: #FFFFFF !important;
+  border: 1px solid #CCDBFD !important;
+  box-shadow: 0 4px 16px rgba(204, 219, 253, 0.5) !important;
+  color: #000000 !important;
+  z-index: 10 !important;
+}
+.visual-label small {
+  color: #475569 !important;
+}
+.visual-label .cross {
+  color: #2563EB !important;
+  font-weight: 700 !important;
 }
 .settings-field small {
   font-size: 12px !important;
