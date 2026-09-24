@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../middlewares/authMiddleware.js';
+import { validate } from '../utils/validation.js';
+import { eventSchema, eventUpdateSchema } from '../utils/eventValidation.js';
+import * as controller from '../controllers/ConfiguracionController.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', controller.list);
+router.get('/:id', controller.get);
+router.post('/', authorize('Admin'), validate(eventSchema), controller.create);
+router.put('/:id', authorize('Admin'), validate(eventUpdateSchema), controller.update);
+export default router;

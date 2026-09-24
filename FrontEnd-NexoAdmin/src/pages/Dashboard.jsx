@@ -1,0 +1,49 @@
+import { lazy, Suspense, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowDownLeft, ArrowUpRight, Banknote, CalendarDays, CircleDollarSign, Clock3, CreditCard, MapPin, RefreshCw, ScanLine, SlidersHorizontal, Ticket, Wallet } from 'lucide-react';
+import TariffManagerModal from '../components/tariffs/TariffManagerModal';
+import { useEvent } from '../context/EventContext';
+import { useAuth } from '../hooks/useAuth';
+import useDashboard from '../hooks/useDashboard';
+import useReveal from '../hooks/useReveal';
+import RevenueChart from '../components/dashboard/RevenueChart';
+import EventIdentity from '../components/EventIdentity';
+import { money, number, dateLabel, timeLabel } from '../utils/format';
+const Scene = lazy(() => import('../components/Scene'));
+
+function Kpi({ title, value, icon: Icon, children, accent = '', progress, detail }) {
+  return <article className={`kpi-card ${accent}`} data-reveal><div className="kpi-top"><span>{title}</span><span className="kpi-icon"><Icon size={18}/></span></div><strong className="kpi-value">{value}</strong><div className="kpi-detail">{children}</div>{progress !== undefined && <div className="progress-track" role="progressbar" aria-label={title} aria-valuenow={Math.min(100, progress)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.min(100, progress)}%` }}/></div>}{detail && <div className="kpi-bottom">{detail}</div>}</article>;
+}
+export default function Dashboard() {
+  const { user } = useAuth();
+  return user.rol === 'Portero' ? <section className="empty-panel"><ScanLine size={32}/><h1>Tu acceso operativo está listo.</h1><p>El dashboard financiero está disponible para Admin y Taquilla. El control en puerta se incorporará en la siguiente entrega.</p><Link to="/evento">Consultar datos del evento <ArrowUpRight size={16}/></Link></section> : <FinancialDashboard/>;
+}
+function FinancialDashboard() {
+  const { user } = useAuth();
+  const { selectedId, loading: eventsLoading, refresh: refreshEvents } = useEvent();
+  const { data, error, loading, updating, refresh } = useDashboard(selectedId);
+  const [showTariffModal, setShowTariffModal] = useState(false);
+  const root = useRef(null);
+  useReveal(root, data?.evento._id);
+  if (eventsLoading || loading) return <section className="dashboard-loading" role="status"><span className="spinner"/> Conectando con tu evento…<div className="skeleton-grid"><span/><span/><span/><span/></div></section>;
+  if (!selectedId) return <section className="empty-panel"><CalendarDays size={34}/><h1>Aún no hay un evento disponible.</h1><p>Cuando tu organización publique un evento, podrás consultar su operación desde este espacio.</p><button className="secondary-button" onClick={refreshEvents}>Volver a consultar</button></section>;
+  if (!data) return <section className="empty-panel"><h1>No pudimos cargar el dashboard.</h1><p role="alert">{error}</p><button className="secondary-button" onClick={refresh}>Reintentar</button></section>;
+  const { evento, resumen, aforo, liquidacion, tarifas, recientes, actualizadoEn } = data;
+  return <div ref={root} className="dashboard">
+    <div className="page-heading"><div><div className="page-eyebrow">WORKSPACE <span>/</span> VISIÓN GENERAL</div><h1>El pulso de tu evento<span>.</span></h1><p>Cada entrada, cada ingreso. Toda tu operación conectada.</p></div><button className="refresh-button" onClick={refresh} disabled={updating}><RefreshCw size={15} className={updating ? 'rotating' : ''}/><span>{updating ? 'Actualizando…' : 'Actualizar'}</span></button></div>
+    {error && <div className="alert error" role="alert">{error} Se muestran los últimos datos recibidos. <button className="text-button" onClick={refresh}>Reintentar</button></div>}
+    <section className="event-banner" data-reveal><div className="banner-visual"><Suspense fallback={null}><Scene/></Suspense></div><div className="banner-copy"><div className="banner-badges"><span className={`status-badge ${evento.activo ? 'active' : 'inactive'}`}><span/>{evento.activo ? 'EVENTO ACTIVO' : 'EVENTO INACTIVO'}</span><span className="outline-badge">EVENT CONTROL</span></div><h2>{evento.nombre}</h2><div className="event-meta"><span><CalendarDays size={14}/>{dateLabel(evento.fecha)}</span><span><Clock3 size={14}/>{evento.horario}</span><span><MapPin size={14}/>{evento.venue}</span></div><EventIdentity marca={evento.marca}/><Link to="/evento" className="banner-link">Consultar evento <ArrowUpRight size={15}/></Link></div><div className="banner-stamp"><Ticket size={19}/><span>EVERY MOMENT<br/><strong>COUNTS.</strong></span></div></section>
+    <div className="section-heading"><h2>Resumen financiero</h2><span className={`sync-label ${error ? 'stale' : ''}`}><span/>{error ? 'Datos sin actualizar' : `Actualizado ${timeLabel(actualizadoEn, evento.zonaHoraria)}`} <span className="poll-label">· cada 15 s</span></span></div>
+    <div className="kpi-grid">
+      <Kpi title="Total recaudado" value={money(resumen.recaudadoCentavos)} icon={CircleDollarSign} accent="featured" progress={aforo.porcentajeReservado} detail={<><span>{number(resumen.entradasReservadas)} entradas reservadas</span><strong>{aforo.porcentajeReservado}%</strong></>}><span className="green-dot"/>{number(resumen.ventasPagadas)} ventas pagadas</Kpi>
+      <Kpi title="Cobrado en efectivo" value={money(resumen.efectivoCentavos)} icon={Banknote} detail={<><span>Del total recaudado</span><strong>{liquidacion.find(item => item.metodo === 'Efectivo')?.porcentaje}%</strong></>}><ArrowDownLeft size={13}/> Ingresos registrados en efectivo</Kpi>
+      <Kpi title="Cobrado en transferencia" value={money(resumen.transferenciaCentavos)} icon={CreditCard} accent="pink" detail={<><span>Del total recaudado</span><strong>{liquidacion.find(item => item.metodo === 'Transferencia')?.porcentaje}%</strong></>}><ArrowDownLeft size={13}/> Pagos bancarios confirmados</Kpi>
+      <Kpi title="Control de aforo" value={<>{number(resumen.ingresados)}<small> / {number(aforo.capacidad)}</small></>} icon={ScanLine} accent="emerald" progress={aforo.porcentajeIngresado} detail={<><span>{number(resumen.pendientesIngreso)} pagadas por ingresar</span><strong>{aforo.porcentajeIngresado}%</strong></>}>Ingresos / capacidad del evento</Kpi>
+    </div>
+    <div className="dashboard-middle"><section className="os-panel liquidation-panel" data-reveal><div className="panel-heading"><div><span className="panel-icon"><Wallet size={18}/></span><h2>Desglose de liquidación</h2></div><span className="subtle-tag">USD</span></div><p className="panel-subtitle">Distribución de los pagos confirmados.</p><RevenueChart data={liquidacion} total={resumen.recaudadoCentavos}/><div className="pending-summary"><span><Clock3 size={15}/> Pendiente de cobro</span><strong>{money(resumen.pendienteCentavos)}</strong></div></section>
+      <section className="os-panel tariffs-panel" data-reveal><div className="panel-heading"><div><span className="panel-icon"><Ticket size={18}/></span><h2>Tarifas oficiales</h2></div>{user.rol === 'Admin' ? <button type="button" className="manage-tariffs-btn" onClick={() => setShowTariffModal(true)} title="Gestionar tarifas y categorías del evento"><SlidersHorizontal size={14}/> Gestionar</button> : <span className="subtle-tag">Solo consulta</span>}</div><p className="panel-subtitle">Precios vigentes definidos por tu organización.</p>{tarifas.length ? <div className="tariff-list">{tarifas.map(tarifa => <div className="tariff-row" key={tarifa._id}><span className={`tariff-symbol ${tarifa.categoria === 'Promo' ? 'promo' : ''}`}><Ticket size={19}/></span><div><strong>{tarifa.nombre}</strong><small>{tarifa.categoria} <span>·</span> {tarifa.etapa}</small></div><span className="tariff-price">{money(tarifa.precioCentavos)}</span></div>)}</div> : <div className="inline-empty"><Ticket size={28}/><strong>No hay tarifas activas</strong><p>{user.rol === 'Admin' ? 'Haz clic en "Gestionar" para agregar tarifas al evento.' : 'Se mostrarán cuando estén disponibles.'}</p></div>}<div className="panel-footnote"><ShieldNote/> {user.rol === 'Admin' ? 'Puedes crear tarifas y categorías con el botón Gestionar.' : 'Las tarifas son administradas por el Administrador.'}</div></section></div>
+    <section className="os-panel activity-panel" data-reveal><div className="panel-heading"><div><span className="panel-icon"><Ticket size={18}/></span><h2>Últimas ventas</h2></div><span className="subtle-tag">{number(resumen.ventas)} registros vigentes</span></div><p className="panel-subtitle">Movimientos recientes del evento seleccionado.</p>{recientes.length ? <div className="table-scroll"><table><thead><tr><th>Ticket</th><th>Asistente</th><th>Entradas</th><th>Método</th><th>Monto</th><th>Estado</th></tr></thead><tbody>{recientes.map(venta => <tr key={venta._id}><td className="mono" title={venta.ticketId}>{venta.ticketId.slice(0, 8).toUpperCase()}</td><td><strong>{venta.nombre}</strong><small>{venta.categoria}</small></td><td>{number(venta.cantidad)}</td><td>{venta.metodo}</td><td className="mono">{money(venta.totalCentavos)}</td><td><span className={`payment-badge ${venta.estadoPago === 'PENDIENTE' ? 'pending' : ''}`}>{venta.estadoPago === 'PENDIENTE' ? 'Pendiente' : 'Pagado'}</span></td></tr>)}</tbody></table></div> : <div className="sales-empty"><span><Ticket size={24}/></span><div><strong>La primera entrada marca el comienzo.</strong><p>Aún no hay ventas registradas para este evento.</p></div><span className="empty-decoration">↗</span></div>}<div className="activity-footer"><span>Las ventas anuladas no se incluyen en el resumen.</span><Link to="/ventas">Administrar ventas →</Link></div></section>
+    {showTariffModal && <TariffManagerModal evento={evento} onClose={() => setShowTariffModal(false)} onSaved={() => refresh()}/>}
+  </div>;
+}
+function ShieldNote() { return <span aria-hidden="true">◇</span>; }

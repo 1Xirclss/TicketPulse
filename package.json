@@ -1,0 +1,23 @@
+{
+  "name": "nexoadmin",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c magenta,cyan \"npm --prefix Backend run dev\" \"npm --prefix FrontEnd-NexoAdmin run dev\"",
+    "install:all": "npm install --prefix Backend && npm install --prefix FrontEnd-NexoAdmin",
+    "build": "npm --prefix FrontEnd-NexoAdmin run build",
+    "test": "npm --prefix Backend test",
+    "seed": "npm --prefix Backend run seed"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.2.1",
+    "jsqr": "^1.4.0",
+    "pdfjs-dist": "^6.3.289"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

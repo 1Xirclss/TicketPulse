@@ -1,0 +1,17 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../middlewares/authMiddleware.js';
+import { validate } from '../utils/validation.js';
+import { saleSchema, editSaleSchema, cancelSaleSchema } from '../utils/ventasValidation.js';
+import * as controller from '../controllers/VentasController.js';
+import { exportCsv, exportPdf } from '../controllers/VentasExportController.js';
+const router = Router();
+router.use(authenticate, authorize('Admin', 'Taquilla'));
+router.get('/opciones', controller.options);
+router.get('/exportar', exportCsv);
+router.get('/exportar.pdf', exportPdf);
+router.get('/', controller.list);
+router.get('/:id', controller.get);
+router.post('/', validate(saleSchema), controller.create);
+router.put('/:id', validate(editSaleSchema), controller.update);
+router.patch('/:id/anular', authorize('Admin'), validate(cancelSaleSchema), controller.cancel);
+export default router;

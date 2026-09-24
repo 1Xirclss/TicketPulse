@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test';
+import { credentials } from '../scripts/e2e-fixtures.mjs';
+test('login real, sesión protegida y logout', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Bienvenido de nuevo.' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/login-desktop.png', fullPage: true });
+  await page.getByLabel('Correo electrónico').fill(credentials.correo);
+  await page.getByLabel('Contraseña', { exact: true }).fill(credentials.password);
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await expect(page.getByRole('heading', { name: 'El pulso de tu evento.' })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.header-user')).toContainText('Administrador de pruebas');
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+  await expect(page).toHaveURL(/login/);
+  expect(errors).toEqual([]);
+});
+test('registro, recuperación y diseño móvil sin desbordamiento', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/registro');
+  await expect(page.getByRole('heading', { name: 'Tu equipo empieza aquí.' })).toBeVisible();
+  await page.getByLabel('Rol en el equipo').selectOption('Admin');
+  await expect(page.getByLabel('Clave de organización · administradores', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/register-mobile.png', fullPage: true });
+  await page.goto('/recuperar');
+  await expect(page.getByRole('button', { name: 'Enviar código de recuperación' })).toBeVisible();
+  await page.goto('/login');
+  await page.screenshot({ path: 'test-results/login-mobile.png', fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
